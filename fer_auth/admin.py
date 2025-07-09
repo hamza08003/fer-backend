@@ -13,15 +13,19 @@ admin.site.index_title = "Welcome to FER Admin Portal"
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['name', 'username_link', 'email', 'email_verified', 'last_login_display', 'updated_at_display', 'email_token_status', 'password_token_status']
-    list_filter = ['email_verified', 'updated_at']
+    list_display = ['name', 'username_link', 'email', 'email_verified', 'two_factor_enabled', 
+                   'last_login_display', 'updated_at_display', 'email_token_status', 'password_token_status']
+    list_filter = ['email_verified', 'two_factor_enabled', 'updated_at']
     search_fields = ['name', 'user__username', 'user__email']
-    readonly_fields = ['last_login_display', 'updated_at', 'email_verification_token', 'email_token_expires_at', 'password_reset_token', 'password_token_expires_at', 'password_token_used']
+    readonly_fields = ['last_login_display', 'updated_at', 'email_verification_token', 
+                      'email_token_expires_at', 'password_reset_token', 'password_token_expires_at', 
+                      'password_token_used', 'two_factor_secret', 'two_factor_backup_codes']
     fieldsets = [
         (None, {'fields': ['user', 'name', 'email_verified']}),
         ('Timestamps', {'fields': ['last_login_display', 'updated_at'], 'classes': ['collapse']}),
         ('Email Verification', {'fields': ['email_verification_token', 'email_token_expires_at'], 'classes': ['collapse']}),
         ('Password Reset', {'fields': ['password_reset_token', 'password_token_expires_at', 'password_token_used'], 'classes': ['collapse']}),
+        ('Two-Factor Authentication', {'fields': ['two_factor_enabled', 'two_factor_secret', 'two_factor_backup_codes'], 'classes': ['collapse']}),
     ]
     
     def username_link(self, obj):
@@ -67,7 +71,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             return format_html('<span style="color: red;">Expired</span>')
     password_token_status.short_description = 'Password Token'
     
-    actions = ['delete_expired_tokens']
+    actions = ['delete_expired_tokens', 'disable_2fa']
     
     def delete_expired_tokens(self, request, queryset):
         count = 0
@@ -81,3 +85,11 @@ class UserProfileAdmin(admin.ModelAdmin):
         self.message_user(request, f"Cleared {count} expired tokens.")
     delete_expired_tokens.short_description = "Clear expired tokens"
     
+    def disable_2fa(self, request, queryset):
+        count = 0
+        for profile in queryset:
+            if profile.two_factor_enabled:
+                profile.disable_2fa()
+                count += 1
+        self.message_user(request, f"Disabled 2FA for {count} users.")
+    disable_2fa.short_description = "Disable two-factor authentication"
