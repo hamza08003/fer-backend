@@ -25,8 +25,12 @@ from .serializers import (
     EmailVerificationSerializer,
     PasswordResetRequestSerializer,
     PasswordResetSerializer,
+    TwoFactorSetupSerializer,
+    TwoFactorVerifySerializer,
+    TwoFactorDisableSerializer,
 )
-from .utils import send_verification_email, send_password_reset_email
+from .utils import (send_verification_email, send_password_reset_email, 
+                   generate_qr_code_base64, send_2fa_enabled_email, send_2fa_disabled_email)
 
 
 # Configure logging
