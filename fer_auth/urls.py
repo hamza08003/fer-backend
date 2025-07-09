@@ -6,6 +6,7 @@ urlpatterns = [
     # Authentication endpoints
     path('register/', views.register, name='register'),
     path('login/', views.login, name='login'),
+    path('login/2fa/verify/', views.verify_2fa, name='verify_2fa'),
     path('logout/', views.logout, name='logout'),
     
     # Profile endpoints
@@ -21,4 +22,10 @@ urlpatterns = [
     # Password reset endpoints
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('reset-password/<uuid:token>/', views.reset_password, name='reset_password'),
+    
+    # 2FA endpoints
+    path('2fa/setup/', views.setup_2fa, name='setup_2fa'),
+    path('2fa/verify/', views.activate_2fa, name='activate_2fa'),
+    path('2fa/disable/', views.disable_2fa, name='disable_2fa'),
+    path('2fa/backup-codes/', views.get_backup_codes, name='get_backup_codes'),
 ]
