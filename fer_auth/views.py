@@ -836,6 +836,7 @@ def delete_account(req):
 #           TWO-FACTOR AUTHENTICATION ENDPOINTS
 #################################################
 
+@extend_schema(**verify_2fa_schema)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def verify_2fa(req):
@@ -908,6 +909,7 @@ def verify_2fa(req):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(**two_factor_setup_schema)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def setup_2fa(req):
@@ -957,6 +959,7 @@ def setup_2fa(req):
     }, status=status.HTTP_200_OK)
 
 
+@extend_schema(**two_factor_activate_schema)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def activate_2fa(req):
@@ -1019,6 +1022,7 @@ def activate_2fa(req):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(**two_factor_disable_schema)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def disable_2fa(req):
@@ -1087,6 +1091,7 @@ def disable_2fa(req):
     }, status=status.HTTP_200_OK)
 
 
+@extend_schema(**two_factor_backup_codes_schema)
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def get_backup_codes(req):
