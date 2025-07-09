@@ -51,16 +51,22 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
+class TwoFactorVerifySerializer(serializers.Serializer):
+    code = serializers.CharField(min_length=6, max_length=8)
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.CharField(source='user.email', read_only=True)
     last_login = serializers.DateTimeField(source='user.last_login', read_only=True)
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True)
     updated_at = serializers.SerializerMethodField()
+    two_factor_enabled = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = UserProfile
-        fields = ['name', 'username', 'email', 'email_verified', 'date_joined', 'last_login', 'updated_at']
+        fields = ['name', 'username', 'email', 'email_verified', 'two_factor_enabled',
+                 'date_joined', 'last_login', 'updated_at']
     
     def get_updated_at(self, obj):
         obj.refresh_from_db()
@@ -109,3 +115,12 @@ class PasswordResetSerializer(serializers.Serializer):
             raise serializers.ValidationError(str(e))
         
         return attrs
+
+
+class TwoFactorSetupSerializer(serializers.Serializer):
+    code = serializers.CharField(min_length=6, max_length=6)
+
+
+class TwoFactorDisableSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+    code = serializers.CharField(min_length=6, max_length=8)
