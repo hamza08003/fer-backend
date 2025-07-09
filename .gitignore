@@ -1,0 +1,24 @@
+# Python related
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Django related
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Environment
+.env
+.venv
+fer_venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/

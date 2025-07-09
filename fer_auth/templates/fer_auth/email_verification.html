@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+    <!--[if mso]>
+    <style type="text/css">
+        table {border-collapse: collapse; border-spacing: 0; margin: 0;}
+        div, td {padding: 0;}
+        div {margin: 0 !important;}
+    </style>
+    <noscript>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        .url-display {
+            display: block;
+            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #374151;
+            word-break: break-all;
+            text-align: center;
+            margin: 20px 0;
+            border: 2px solid #D1D5DB;
+            transition: all 0.3s ease;
+        }
+        .url-display:hover {
+            background: linear-gradient(135deg, #E5E7EB 0%, #D1D5DB 100%);
+            border-color: #9CA3AF;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .expiration-notice {
+            color: #6B7280;
+            font-size: 14px;
+            line-height: 1.6;
+            font-style: italic;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f5f5f5; font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f5f5f5">
+        <tr>
+            <td align="center" style="padding:40px 0;">
+                <table role="presentation" align="center" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width:600px; border-radius:8px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.1);">
+                    <!-- Header with gradient -->
+                    <tr>
+                        <td align="center" style="background-image:linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%); padding:40px 30px; text-align:center;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <h1 style="color:#ffffff; font-size:28px; font-weight:700; margin:20px 0 0; text-transform:uppercase; letter-spacing:1px; text-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                                            Email Verification
+                                        </h1>
+                                        <p style="color:rgba(255,255,255,0.9); font-size:16px; margin:10px 0 0;">
+                                            One quick step to secure your account
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Main content area -->
+                    <tr>
+                        <td align="center" bgcolor="#ffffff" style="padding:40px 30px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td>
+                                        <p style="color:#333333; font-size:16px; line-height:1.6; margin:0 0 20px;">Hi <span style="font-weight:bold; color:#6366F1;">{{ name }}</span>,</p>
+                                        <p style="color:#333333; font-size:16px; line-height:1.6; margin:0 0 20px;">Welcome to FER App! We're excited to have you on board. Please verify your email address to unlock all features.</p>
+                                        <div style="margin:30px 0; border-radius:6px; background-color:#F9FAFB; padding:20px; border-left:4px solid #8B5CF6;">
+                                            <p style="color:#4B5563; font-size:15px; line-height:1.5; margin:0;">
+                                                Your account is almost ready. Click the button below to complete your registration.
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Button -->
+                                <tr>
+                                    <td align="center" style="padding:20px 0 30px;">
+                                        <!-- Button with animation -->
+                                        <table role="presentation" border="0" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td align="center" style="border-radius:50px; background-image:linear-gradient(to right, #6366F1, #8B5CF6); box-shadow:0 4px 10px rgba(107, 114,245,0.3); transition:all 0.3s ease;">
+                                                    <a href="{{ verification_url }}" target="_blank" style="display:inline-block; font-size:16px; font-weight:600; color:#ffffff; text-decoration:none; padding:14px 40px; border-radius:50px;">
+                                                        Verify My Email
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <p style="color:#6B7280; font-size:14px; line-height:1.6; margin:0 0 20px;">If the button doesn't work, copy and paste this link into your browser:</p>
+                                        <p class="url-display">{{ verification_url }}</p>
+                                        <p class="expiration-notice">This link will expire in 24 hours. If you didn't create this account, please ignore this email.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#111827" style="padding:30px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="color:#9CA3AF; font-size:14px; line-height:1.5; margin:0 0 5px;">© 2025 FER App. All rights reserved.</p>
+                                        <p style="color:#6B7280; font-size:12px; line-height:1.5; margin:0;">This is an automated message from FER App. Please do not reply to this email.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
