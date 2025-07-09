@@ -46,23 +46,22 @@ login_schema = {
     "request": UserLoginSerializer,
     "responses": {
         200: OpenApiResponse(
-            description="Login successful",
+            description="Login successful or 2FA required",
             response={"type": "object", "properties": {
                 "success": {"type": "boolean"},
                 "message": {"type": "string"},
                 "token": {"type": "string"},
+                "two_factor_required": {"type": "boolean"},
+                "temp_token": {"type": "string"},
                 "user": {"type": "object"}
             }}
         ),
-        400: OpenApiResponse(description="Invalid credentials")
+        400: OpenApiResponse(description="Invalid credentials or unverified email")
     },
     "examples": [
         OpenApiExample(
             "Login Example",
-            value={
-                "username": "existinguser",
-                "password": "YourPassword123"
-            },
+            value={"username": "example_user", "password": "secure_password"},
             request_only=True,
         )
     ]
