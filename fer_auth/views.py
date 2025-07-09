@@ -125,6 +125,9 @@ def login(req):
     for future API access. The user's `last_login` timestamp is also updated 
     on successful login.
 
+    If 2FA is enabled for the user, a temporary token is provided that must be
+    used with a valid 2FA code to complete the login process.
+
     Login is denied if:
     - The user has not verified their email
     - The account is deactivated
@@ -140,12 +143,14 @@ def login(req):
             - success (bool): Whether authentication was successful
             - message (str): Descriptive status message
             - token (str, optional): Authentication token (on success)
+            - temp_token (str, optional): Temporary token for 2FA verification
+            - two_factor_required (bool): Whether 2FA verification is required
             - user (dict, optional): Basic user details (on success)
             - errors (dict, optional): Validation errors (on failure)
             - email_verified (bool, optional): If login fails due to unverified email
 
     Status Codes:
-        200 OK: Login successful
+        200 OK: Login successful or 2FA required
         400 Bad Request: Invalid credentials, unverified email, or deactivated account
     """
 
@@ -168,22 +173,41 @@ def login(req):
                         'email_verified': False
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
+                # Check if 2FA is enabled
+                if user.profile.two_factor_enabled:
+                    # create a temporary token for 2FA verification
+                    temp_token, _ = Token.objects.get_or_create(user=user)
+                    
+                    return Response({
+                        'success': True,
+                        'message': 'Please enter your 2FA verification code.',
+                        'two_factor_required': True,
+                        'temp_token': temp_token.key,
+                        'user': {
+                            'username': user.username,
+                            'name': user.profile.name,
+                        }
+                    }, status=status.HTTP_200_OK)
+                
+                # update last login time
                 user.last_login = timezone.now()
                 user.save(update_fields=['last_login'])
                 
-                # create or get token
+                # create or get token for non-2FA users
                 token, _ = Token.objects.get_or_create(user=user)
                 
                 return Response({
                     'success': True,
                     'message': 'Login successful.',
                     'token': token.key,
+                    'two_factor_required': False,
                     'user': {
                         'id': user.id,
                         'username': user.username,
                         'email': user.email,
                         'name': user.profile.name,
-                        'email_verified': user.profile.email_verified
+                        'email_verified': user.profile.email_verified,
+                        'two_factor_enabled': user.profile.two_factor_enabled
                     }
                 }, status=status.HTTP_200_OK)
             else:
