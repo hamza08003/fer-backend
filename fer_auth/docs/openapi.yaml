@@ -1,0 +1,964 @@
+openapi: 3.0.3
+info:
+  title: FER API
+  description: Facial Emotion Recognition API with comprehensive authentication features including 2FA
+  version: 1.0.0
+  contact:
+    email: admin@example.com
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Email Verification
+    description: Email verification endpoints
+  - name: Profile Management
+    description: User profile management endpoints
+  - name: Password Management
+    description: Password reset and change endpoints
+  - name: Two-Factor Authentication
+    description: 2FA setup and management endpoints
+  - name: Account Management
+    description: Account deletion and management endpoints
+paths:
+  /fer_auth/register/:
+    post:
+      tags:
+        - Authentication
+      summary: Register User
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+            example:
+              username: "newuser123"
+              email: "user@example.com"
+              name: "New User"
+              password: "SecurePassword@123"
+              password_confirm: "SecurePassword@123"
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+              example:
+                success: true
+                message: "Account created successfully. Please check your email to verify your account."
+                user:
+                  username: "newuser123"
+                  email: "user@example.com" 
+                  name: "New User"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid data provided."
+                errors:
+                  username: ["Username already exists."]
+                  email: ["Email already exists."]
+                  password: ["This password is too common."]
+
+  /fer_auth/login/:
+    post:
+      tags:
+        - Authentication
+      summary: Login
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+            example:
+              username: "testuser2fa"
+              password: "SecurePass123!"
+      responses:
+        '200':
+          description: Login successful or 2FA required
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LoginResponse'
+                  - $ref: '#/components/schemas/TwoFactorRequiredResponse'
+              examples:
+                standard:
+                  value:
+                    success: true
+                    message: "Login successful."
+                    token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+                    two_factor_required: false
+                    user:
+                      id: 1
+                      username: "testuser2fa"
+                      email: "test2fa@example.com"
+                      name: "Test User"
+                      email_verified: true
+                      two_factor_enabled: false
+                twoFactor:
+                  value:
+                    success: true
+                    message: "Please enter your 2FA verification code."
+                    two_factor_required: true
+                    temp_token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+                    user:
+                      username: "testuser2fa"
+                      name: "Test User"
+        '400':
+          description: Invalid credentials or unverified email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid username or password."
+
+  /fer_auth/login/2fa/:
+    post:
+      tags:
+        - Authentication
+      summary: Verify 2FA Login
+      operationId: verify2faLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                temp_token:
+                  type: string
+                code:
+                  type: string
+            example:
+              temp_token: "a1b2c3d4e5f6..."
+              code: "123456"
+      responses:
+        '200':
+          description: 2FA verification successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                success: true
+                message: "Two-factor authentication successful."
+                token: "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+                user:
+                  id: 1
+                  username: "testuser2fa"
+                  email: "test2fa@example.com"
+                  name: "Test User"
+                  email_verified: true
+                  two_factor_enabled: true
+        '400':
+          description: Invalid code or token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid verification code. Please try again."
+
+  /fer_auth/logout/:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      operationId: logoutUser
+      security:
+        - TokenAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Logged out successfully."
+        '400':
+          description: User not logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "User not logged in."
+
+  /fer_auth/verify-email/{token}/:
+    get:
+      tags:
+        - Email Verification
+      summary: Verify Email
+      operationId: verifyEmail
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Email verification token
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Email verified successfully. You can now login."
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Verification link has expired."
+
+  /fer_auth/resend-verification/:
+    post:
+      tags:
+        - Email Verification
+      summary: Resend Verification
+      operationId: resendVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+            example:
+              email: "user@example.com"
+      responses:
+        '200':
+          description: Verification email sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Verification email sent successfully."
+        '400':
+          description: Email already verified or does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Email is already verified."
+
+  /fer_auth/profile/:
+    get:
+      tags:
+        - Profile Management
+      summary: Get Profile
+      operationId: getProfile
+      security:
+        - TokenAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  profile:
+                    $ref: '#/components/schemas/UserProfileData'
+              example:
+                success: true
+                profile:
+                  name: "Test User"
+                  username: "testuser2fa"
+                  email: "test2fa@example.com"
+                  email_verified: true
+                  two_factor_enabled: true
+                  date_joined: "2025-07-01T10:00:00Z"
+                  last_login: "2025-07-05T15:30:00Z"
+                  updated_at: "2025-07-02T09:15:00Z"
+        '404':
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Profile not found."
+
+  /fer_auth/profile/update/:
+    put:
+      tags:
+        - Profile Management
+      summary: Update Profile
+      operationId: updateProfile
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+            example:
+              name: "Updated Name"
+              username: "updatedusername"
+              email: "newemail@example.com"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  profile:
+                    $ref: '#/components/schemas/UserProfileData'
+              example:
+                success: true
+                message: "Profile updated successfully. Please verify your new email address."
+                profile:
+                  name: "Updated Name"
+                  username: "updatedusername"
+                  email: "newemail@example.com"
+                  email_verified: false
+                  two_factor_enabled: true
+                  date_joined: "2025-07-01T10:00:00Z"
+                  last_login: "2025-07-05T15:30:00Z"
+                  updated_at: "2025-07-05T16:45:00Z"
+        '400':
+          description: Invalid data or duplicate email/username
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Username already exists."
+
+  /fer_auth/change-password/:
+    post:
+      tags:
+        - Password Management
+      summary: Change Password
+      operationId: changePassword
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePassword'
+            example:
+              old_password: "SecurePass123!"
+              new_password: "NewSecurePass123!"
+              new_password_confirm: "NewSecurePass123!"
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Password changed successfully. Please login again."
+        '400':
+          description: Old password incorrect or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Old password is incorrect."
+
+  /fer_auth/forgot-password/:
+    post:
+      tags:
+        - Password Management
+      summary: Reset Password Request
+      operationId: requestPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+            example:
+              email: "user@example.com"
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Password reset email sent successfully."
+        '400':
+          description: Invalid email format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid email address."
+
+  /fer_auth/reset-password/{token}/:
+    get:
+      tags:
+        - Password Management
+      summary: Verify Reset Token
+      operationId: verifyResetToken
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  token:
+                    type: string
+              example:
+                success: true
+                message: "Token is valid. Please submit your new password."
+                token: "550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Password reset link has expired or already used."
+    post:
+      tags:
+        - Password Management
+      summary: Complete Reset
+      operationId: completePasswordReset
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+            example:
+              new_password: "NewSecurePass123!"
+              new_password_confirm: "NewSecurePass123!"
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Password reset successfully. Please login with your new password."
+        '400':
+          description: Invalid token or password validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Password reset link has expired or already used."
+
+  /fer_auth/2fa/setup/:
+    get:
+      tags:
+        - Two-Factor Authentication
+      summary: Setup 2FA
+      operationId: setup2fa
+      security:
+        - TokenAuth: []
+      responses:
+        '200':
+          description: 2FA setup initialized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  secret:
+                    type: string
+                  qr_code:
+                    type: string
+                  manual_entry_key:
+                    type: string
+              example:
+                success: true
+                message: "Two-factor authentication setup initialized. Scan the QR code with your authenticator app."
+                secret: "JBSWY3DPEHPK3PXP"
+                qr_code: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                manual_entry_key: "JBSWY3DPEHPK3PXP"
+        '400':
+          description: 2FA already enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Two-factor authentication is already enabled."
+
+  /fer_auth/2fa/verify/:
+    post:
+      tags:
+        - Two-Factor Authentication
+      summary: Activate 2FA
+      operationId: activate2fa
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+            example:
+              code: "123456"
+      responses:
+        '200':
+          description: 2FA successfully activated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  backup_codes:
+                    type: array
+                    items:
+                      type: string
+              example:
+                success: true
+                message: "Two-factor authentication has been enabled successfully."
+                backup_codes: ["12345678", "23456789", "34567890", "45678901", "56789012", "67890123", "78901234", "89012345"]
+        '400':
+          description: Invalid code or 2FA already enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid verification code. Please try again."
+
+  /fer_auth/2fa/disable/:
+    post:
+      tags:
+        - Two-Factor Authentication
+      summary: Disable 2FA
+      operationId: disable2fa
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                code:
+                  type: string
+            example:
+              password: "SecurePass123!"
+              code: "123456"
+      responses:
+        '200':
+          description: 2FA successfully disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Two-factor authentication has been disabled successfully."
+        '400':
+          description: Invalid password/code or 2FA not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid verification code."
+
+  /fer_auth/2fa/backup-codes/:
+    get:
+      tags:
+        - Two-Factor Authentication
+      summary: Get Backup Codes
+      operationId: getBackupCodes
+      security:
+        - TokenAuth: []
+      responses:
+        '200':
+          description: Backup codes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  backup_codes:
+                    type: array
+                    items:
+                      type: string
+              example:
+                success: true
+                backup_codes: ["12345678", "23456789", "34567890", "45678901", "56789012", "67890123", "78901234", "89012345"]
+        '400':
+          description: 2FA not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Two-factor authentication is not enabled."
+    post:
+      tags:
+        - Two-Factor Authentication
+      summary: New Backup Codes
+      operationId: regenerateBackupCodes
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+            example:
+              code: "123456"
+      responses:
+        '200':
+          description: New backup codes generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  backup_codes:
+                    type: array
+                    items:
+                      type: string
+              example:
+                success: true
+                message: "New backup codes generated."
+                backup_codes: ["87654321", "76543210", "65432109", "54321098", "43210987", "32109876", "21098765", "10987654"]
+        '400':
+          description: 2FA not enabled or invalid code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid verification code."
+
+  /fer_auth/delete-account/:
+    delete:
+      tags:
+        - Account Management
+      summary: Delete Account
+      operationId: deleteAccount
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+            example:
+              password: "SecurePass123!"
+      responses:
+        '200':
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Account deleted successfully."
+        '400':
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Incorrect password."
+
+components:
+  schemas:
+    UserRegistration:
+      type: object
+      required:
+        - username
+        - email
+        - name
+        - password
+        - password_confirm
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        password:
+          type: string
+          format: password
+        password_confirm:
+          type: string
+          format: password
+
+    RegistrationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        user:
+          type: object
+
+    UserLogin:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        token:
+          type: string
+        two_factor_required:
+          type: boolean
+        user:
+          type: object
+
+    TwoFactorRequiredResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        two_factor_required:
+          type: boolean
+        temp_token:
+          type: string
+        user:
+          type: object
+
+    UserProfileData:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        email_verified:
+          type: boolean
+        two_factor_enabled:
+          type: boolean
+        date_joined:
+          type: string
+        last_login:
+          type: string
+        updated_at:
+          type: string
+
+    ChangePassword:
+      type: object
+      required:
+        - old_password
+        - new_password
+        - new_password_confirm
+      properties:
+        old_password:
+          type: string
+        new_password:
+          type: string
+        new_password_confirm:
+          type: string
+
+    ResetPassword:
+      type: object
+      required:
+        - new_password
+        - new_password_confirm
+      properties:
+        new_password:
+          type: string
+        new_password_confirm:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        errors:
+          type: object
+
+  securitySchemes:
+    TokenAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
