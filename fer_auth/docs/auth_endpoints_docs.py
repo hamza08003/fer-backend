@@ -306,3 +306,120 @@ delete_account_schema = {
         )
     ]
 }
+
+# -------------------------
+# TWO-FACTOR AUTHENTICATION SCHEMAS
+# -------------------------
+
+two_factor_setup_schema = {
+    "tags": ["Two-Factor Authentication"],
+    "responses": {
+        200: OpenApiResponse(
+            description="2FA setup initialized",
+            response={"type": "object", "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"},
+                "secret": {"type": "string"},
+                "qr_code": {"type": "string", "format": "uri"},
+                "manual_entry_key": {"type": "string"}
+            }}
+        ),
+        400: OpenApiResponse(description="2FA already enabled")
+    }
+}
+
+two_factor_activate_schema = {
+    "tags": ["Two-Factor Authentication"],
+    "request": TwoFactorSetupSerializer,
+    "responses": {
+        200: OpenApiResponse(
+            description="2FA successfully activated",
+            response={"type": "object", "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"},
+                "backup_codes": {"type": "array", "items": {"type": "string"}}
+            }}
+        ),
+        400: OpenApiResponse(description="Invalid code or 2FA already enabled")
+    },
+    "examples": [
+        OpenApiExample(
+            "Activate 2FA Example",
+            value={"code": "123456"},
+            request_only=True,
+        )
+    ]
+}
+
+two_factor_disable_schema = {
+    "tags": ["Two-Factor Authentication"],
+    "request": TwoFactorDisableSerializer,
+    "responses": {
+        200: OpenApiResponse(
+            description="2FA successfully disabled",
+            response={"type": "object", "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"}
+            }}
+        ),
+        400: OpenApiResponse(description="Invalid password/code or 2FA not enabled")
+    },
+    "examples": [
+        OpenApiExample(
+            "Disable 2FA Example",
+            value={
+                "password": "YourCurrentPassword",
+                "code": "123456"
+            },
+            request_only=True,
+        )
+    ]
+}
+
+two_factor_backup_codes_schema = {
+    "tags": ["Two-Factor Authentication"],
+    "request": {"type": "object", "properties": {
+        "code": {"type": "string", "description": "Current 2FA code (for regeneration only)"}
+    }},
+    "responses": {
+        200: OpenApiResponse(
+            description="Backup codes retrieved/regenerated",
+            response={"type": "object", "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"},
+                "backup_codes": {"type": "array", "items": {"type": "string"}}
+            }}
+        ),
+        400: OpenApiResponse(description="2FA not enabled or invalid code")
+    }
+}
+
+verify_2fa_schema = {
+    "tags": ["Authentication"],
+    "request": {"type": "object", "properties": {
+        "temp_token": {"type": "string"},
+        "code": {"type": "string"}
+    }},
+    "responses": {
+        200: OpenApiResponse(
+            description="2FA verification successful",
+            response={"type": "object", "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"},
+                "token": {"type": "string"},
+                "user": {"type": "object"}
+            }}
+        ),
+        400: OpenApiResponse(description="Invalid code or token")
+    },
+    "examples": [
+        OpenApiExample(
+            "Verify 2FA Example",
+            value={
+                "temp_token": "a1b2c3d4e5f6...",
+                "code": "123456"
+            },
+            request_only=True,
+        )
+    ]
+}
