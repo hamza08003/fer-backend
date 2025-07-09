@@ -830,3 +830,322 @@ def delete_account(req):
             'success': False,
             'message': 'Account deletion failed.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+#################################################
+#           TWO-FACTOR AUTHENTICATION ENDPOINTS
+#################################################
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_2fa(req):
+    """
+    Verify a 2FA code during login
+
+    This endpoint is called after initial username/password authentication when
+    2FA is enabled. It requires a temporary token and 2FA code.
+
+    Args:
+        req (Request): DRF request object with:
+            - temp_token (str): Temporary token from login endpoint
+            - code (str): 2FA code from authenticator app or backup code
+
+    Returns:
+        Response: JSON response with:
+            - success (bool)
+            - message (str)
+            - token (str): Final authentication token on success
+            - user (dict): User information
+
+    Status Codes:
+        200 OK: Code verified successfully
+        400 Bad Request: Invalid code or token
+    """
+    temp_token = req.data.get('temp_token')
+    code = req.data.get('code')
+    
+    if not temp_token or not code:
+        return Response({
+            'success': False,
+            'message': 'Missing temporary token or verification code.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Get the user associated with this temporary token
+        token_obj = Token.objects.get(key=temp_token)
+        user = token_obj.user
+        
+        # Verify the 2FA code
+        if user.profile.verify_2fa_code(code):
+            # Code is valid, update login time and return full access
+            user.last_login = timezone.now()
+            user.save(update_fields=['last_login'])
+            
+            # Return the same token for consistency
+            return Response({
+                'success': True,
+                'message': 'Two-factor authentication successful.',
+                'token': token_obj.key,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'name': user.profile.name,
+                    'email_verified': user.profile.email_verified,
+                    'two_factor_enabled': user.profile.two_factor_enabled
+                }
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'success': False,
+                'message': 'Invalid verification code. Please try again.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Token.DoesNotExist:
+        return Response({
+            'success': False,
+            'message': 'Invalid temporary token.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def setup_2fa(req):
+    """
+    Begin setup of 2FA
+
+    Generates a new 2FA secret and returns it with a QR code for the user
+    to scan with their authenticator app.
+
+    Args:
+        req (Request): DRF request with authenticated user
+
+    Returns:
+        Response: JSON response with:
+            - success (bool)
+            - message (str)
+            - secret (str): TOTP secret key
+            - qr_code (str): QR code as base64 data URI
+            - manual_entry_key (str): Secret key for manual entry
+
+    Status Codes:
+        200 OK: Setup information generated successfully
+        400 Bad Request: 2FA already enabled
+    """
+    profile = req.user.profile
+    
+    # Check if 2FA is already enabled
+    if profile.two_factor_enabled:
+        return Response({
+            'success': False,
+            'message': 'Two-factor authentication is already enabled.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Generate a new secret key
+    secret = profile.generate_2fa_secret()
+    
+    # Generate the QR code URI
+    totp_uri = profile.get_totp_uri()
+    qr_code = generate_qr_code_base64(totp_uri)
+    
+    return Response({
+        'success': True,
+        'message': 'Two-factor authentication setup initialized. Scan the QR code with your authenticator app.',
+        'secret': secret,
+        'qr_code': qr_code,
+        'manual_entry_key': secret
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def activate_2fa(req):
+    """
+    Activate 2FA after setup
+
+    Verifies the provided code matches the temporary 2FA secret,
+    then activates 2FA for the user's account.
+
+    Args:
+        req (Request): DRF request with:
+            - code (str): Verification code from authenticator app
+
+    Returns:
+        Response: JSON response with:
+            - success (bool)
+            - message (str)
+            - backup_codes (list): One-time use backup codes
+
+    Status Codes:
+        200 OK: 2FA successfully activated
+        400 Bad Request: Invalid code or 2FA already enabled
+    """
+    serializer = TwoFactorSetupSerializer(data=req.data)
+    
+    if not serializer.is_valid():
+        return Response({
+            'success': False,
+            'message': 'Invalid data provided.',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    profile = req.user.profile
+    code = serializer.validated_data['code']
+    
+    # Check if 2FA is already enabled
+    if profile.two_factor_enabled:
+        return Response({
+            'success': False,
+            'message': 'Two-factor authentication is already enabled.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Verify and activate 2FA
+    if profile.activate_2fa(code):
+        # Send notification email
+        send_2fa_enabled_email(req.user)
+        
+        # Return backup codes
+        backup_codes = profile.two_factor_backup_codes
+        
+        return Response({
+            'success': True,
+            'message': 'Two-factor authentication has been enabled successfully.',
+            'backup_codes': backup_codes
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            'success': False,
+            'message': 'Invalid verification code. Please try again.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def disable_2fa(req):
+    """
+    Disable 2FA for the user
+
+    Requires password and 2FA code verification before disabling 2FA.
+
+    Args:
+        req (Request): DRF request with:
+            - password (str): User's current password
+            - code (str): Current 2FA code or backup code
+
+    Returns:
+        Response: JSON response with:
+            - success (bool)
+            - message (str)
+
+    Status Codes:
+        200 OK: 2FA successfully disabled
+        400 Bad Request: Invalid password/code or 2FA not enabled
+    """
+    serializer = TwoFactorDisableSerializer(data=req.data)
+    
+    if not serializer.is_valid():
+        return Response({
+            'success': False,
+            'message': 'Invalid data provided.',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    profile = req.user.profile
+    password = serializer.validated_data['password']
+    code = serializer.validated_data['code']
+    
+    # Check if 2FA is enabled
+    if not profile.two_factor_enabled:
+        return Response({
+            'success': False,
+            'message': 'Two-factor authentication is not enabled.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Verify password
+    if not req.user.check_password(password):
+        return Response({
+            'success': False,
+            'message': 'Invalid password.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Verify 2FA code
+    if not profile.verify_2fa_code(code):
+        return Response({
+            'success': False,
+            'message': 'Invalid verification code.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Disable 2FA
+    profile.disable_2fa()
+    
+    # Send notification email
+    send_2fa_disabled_email(req.user)
+    
+    return Response({
+        'success': True,
+        'message': 'Two-factor authentication has been disabled successfully.'
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def get_backup_codes(req):
+    """
+    Get or regenerate backup codes for 2FA
+
+    GET: Returns current backup codes
+    POST: Regenerates backup codes (requires 2FA verification)
+
+    Args:
+        req (Request): DRF request with:
+            - code (str): Current 2FA code (POST only)
+
+    Returns:
+        Response: JSON response with:
+            - success (bool)
+            - message (str)
+            - backup_codes (list): One-time use backup codes
+
+    Status Codes:
+        200 OK: Operation successful
+        400 Bad Request: 2FA not enabled or invalid code
+    """
+    profile = req.user.profile
+    
+    # Check if 2FA is enabled
+    if not profile.two_factor_enabled:
+        return Response({
+            'success': False,
+            'message': 'Two-factor authentication is not enabled.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if req.method == 'GET':
+        # Simply return current backup codes
+        return Response({
+            'success': True,
+            'backup_codes': profile.two_factor_backup_codes or []
+        }, status=status.HTTP_200_OK)
+    
+    # For POST - regenerate codes after verifying 2FA code
+    code = req.data.get('code')
+    
+    if not code:
+        return Response({
+            'success': False,
+            'message': 'Verification code is required.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not profile.verify_2fa_code(code):
+        return Response({
+            'success': False,
+            'message': 'Invalid verification code.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Generate new backup codes
+    backup_codes = profile.generate_backup_codes()
+    
+    return Response({
+        'success': True,
+        'message': 'New backup codes generated.',
+        'backup_codes': backup_codes
+    }, status=status.HTTP_200_OK)
