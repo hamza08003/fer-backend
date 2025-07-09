@@ -156,6 +156,15 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/fer/',
+    'TAGS': [
+        {'name': 'Authentication', 'description': 'User authentication endpoints'},
+        {'name': 'Email Verification', 'description': 'Email verification endpoints'},
+        {'name': 'Profile Management', 'description': 'User profile management endpoints'},
+        {'name': 'Password Management', 'description': 'Password reset and change endpoints'},
+        {'name': 'Two-Factor Authentication', 'description': '2FA setup and management endpoints'},
+        {'name': 'Account Management', 'description': 'Account deletion and management endpoints'},
+    ],
 }
 
 # Base URL for email links
