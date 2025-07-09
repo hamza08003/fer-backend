@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two-Factor Authentication Disabled</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #e9e9e9;
+            border-radius: 5px;
+        }
+        .header {
+            background-color: #f44336;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .header h1 {
+            color: white;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Two-Factor Authentication Disabled</h1>
+        </div>
+        <div class="content">
+            <p>Hi {{ name }},</p>
+            <p>Two-factor authentication has been disabled for your account.</p>
+            <p>This means your account is now protected only by your password. If you did not make this change, please contact support immediately as your account may have been compromised.</p>
+            <p>We recommend keeping two-factor authentication enabled for maximum security.</p>
+        </div>
+        <div class="footer">
+            <p>© 2025 FER App. All rights reserved.</p>
+            <p>This is an automated email, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
