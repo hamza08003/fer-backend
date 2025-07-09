@@ -63,6 +63,38 @@ login_schema = {
             "Login Example",
             value={"username": "example_user", "password": "secure_password"},
             request_only=True,
+        ),
+        OpenApiExample(
+            "Login Response Example",
+            value={
+                "success": True,
+                "message": "Login successful.",
+                "token": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
+                "two_factor_required": False,
+                "user": {
+                    "id": 1,
+                    "username": "example_user",
+                    "email": "user@example.com",
+                    "name": "Example User",
+                    "email_verified": True,
+                    "two_factor_enabled": False
+                }
+            },
+            response_only=True,
+        ),
+        OpenApiExample(
+            "2FA Required Response Example",
+            value={
+                "success": True,
+                "message": "Please enter your 2FA verification code.",
+                "two_factor_required": True,
+                "temp_token": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b",
+                "user": {
+                    "username": "example_user",
+                    "name": "Example User"
+                }
+            },
+            response_only=True,
         )
     ]
 }
