@@ -1154,3 +1154,20 @@ def get_backup_codes(req):
         'message': 'New backup codes generated.',
         'backup_codes': backup_codes
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def is_authenticated(request):
+    return Response({
+        'success': True,
+        'message': 'User is authenticated.',
+        'user': {
+            'id': request.user.id,
+            'username': request.user.username,
+            'email': request.user.email,
+            'name': request.user.profile.name,
+            'two_factor_enabled': request.user.profile.two_factor_enabled
+        }
+    }, status=status.HTTP_200_OK)
+

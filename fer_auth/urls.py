@@ -8,6 +8,7 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('login/2fa/verify/', views.verify_2fa, name='verify_2fa'),
     path('logout/', views.logout, name='logout'),
+    path('user/authenticated/', views.is_authenticated, name='is_authenticated'),
     
     # Profile endpoints
     path('profile/', views.profile, name='profile'),
