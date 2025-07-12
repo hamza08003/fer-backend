@@ -7,6 +7,63 @@ from ..serializers import *
 #  AUTHENTICATION SCHEMAS
 # -------------------------
 
+auth_status_schema = {
+    "tags": ["Authentication"],
+    "responses": {
+        200: OpenApiResponse(
+            description="Authentication check successful",
+            response={"type": "object", "properties": {
+                "success": {"type": "boolean"},
+                "authenticated": {"type": "boolean"},
+                "message": {"type": "string"},
+                "user": {"type": "object", "properties": {
+                    "id": {"type": "integer"},
+                    "username": {"type": "string"},
+                    "email": {"type": "string", "format": "email"},
+                    "name": {"type": "string"},
+                    "two_factor_enabled": {"type": "boolean"}
+                }}
+            }}
+        ),
+        401: OpenApiResponse(
+            description="Not authenticated",
+            response={"type": "object", "properties": {
+                "success": {"type": "boolean"},
+                "authenticated": {"type": "boolean"},
+                "message": {"type": "string"}
+            }}
+        )
+    },
+    "examples": [
+        OpenApiExample(
+            "Authentication Successful",
+            value={
+                "success": True,
+                "authenticated": True,
+                "message": "User is authenticated.",
+                "user": {
+                    "id": 1,
+                    "username": "example_user",
+                    "email": "user@example.com",
+                    "name": "Example User",
+                    "two_factor_enabled": False
+                }
+            },
+            response_only=True,
+        ),
+        OpenApiExample(
+            "Not Authenticated",
+            value={
+                "success": False,
+                "authenticated": False,
+                "message": "User is not authenticated.",
+            },
+            response_only=True,
+        )
+    ]
+}
+
+
 registration_schema = {
     "tags": ["Authentication"],
     "request": UserRegistrationSerializer,
