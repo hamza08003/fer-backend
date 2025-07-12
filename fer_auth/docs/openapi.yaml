@@ -456,7 +456,7 @@ paths:
                 success: false
                 message: "Username already exists."
 
-  /fer/v1/users/update/password/:
+  /fer/v1/users/me/update/password/:
     post:
       tags:
         - Password Management
