@@ -22,10 +22,10 @@ tags:
   - name: Account Management
     description: Account deletion and management endpoints
 paths:
-  /fer/v1/auth/status/:
+  /fer/v1/users/status/:
     get:
       tags:
-        - Authentication
+        - Profile Management 
       summary: Check Authentication Status
       operationId: checkAuthStatus
       security:
