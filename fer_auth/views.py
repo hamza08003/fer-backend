@@ -41,6 +41,44 @@ logger = logging.getLogger(__name__)
 #           AUTHENTICATION ENDPOINTS
 #################################################
 
+@extend_schema(**auth_status_schema)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_auth_status(req):
+    """
+    Check if the user is authenticated.
+    
+    Returns user data if authenticated, or a clear "not authenticated" message
+    if no valid token is provided. This endpoint is designed to be used
+    by frontend to verify authentication status.
+    
+    Args:
+        request (Request): Django REST Framework request object
+        
+    Returns:
+        Response: JSON response with authentication status and user data if authenticated
+    """
+    if req.user and req.user.is_authenticated:
+        return Response({
+            'success': True,
+            'authenticated': True,
+            'message': 'User is authenticated.',
+            'user': {
+                'id': req.user.id,
+                'username': req.user.username,
+                'email': req.user.email,
+                'name': req.user.profile.name,
+                'two_factor_enabled': req.user.profile.two_factor_enabled
+            }
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            'success': False,
+            'authenticated': False,
+            'message': 'User is not authenticated.',
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+
 @extend_schema(**registration_schema)
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -1154,20 +1192,3 @@ def get_backup_codes(req):
         'message': 'New backup codes generated.',
         'backup_codes': backup_codes
     }, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def is_authenticated(request):
-    return Response({
-        'success': True,
-        'message': 'User is authenticated.',
-        'user': {
-            'id': request.user.id,
-            'username': request.user.username,
-            'email': request.user.email,
-            'name': request.user.profile.name,
-            'two_factor_enabled': request.user.profile.two_factor_enabled
-        }
-    }, status=status.HTTP_200_OK)
-
