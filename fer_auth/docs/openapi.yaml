@@ -22,7 +22,7 @@ tags:
   - name: Account Management
     description: Account deletion and management endpoints
 paths:
-  /fer_auth/register/:
+  /fer/v1/auth/register/:
     post:
       tags:
         - Authentication
@@ -68,7 +68,7 @@ paths:
                   email: ["Email already exists."]
                   password: ["This password is too common."]
 
-  /fer_auth/login/:
+  /fer/v1/auth/login/:
     post:
       tags:
         - Authentication
@@ -125,7 +125,7 @@ paths:
                 success: false
                 message: "Invalid username or password."
 
-  /fer_auth/login/2fa/:
+  /fer/v1/auth/verify-2fa/:
     post:
       tags:
         - Authentication
@@ -173,7 +173,7 @@ paths:
                 success: false
                 message: "Invalid verification code. Please try again."
 
-  /fer_auth/logout/:
+  /fer/v1/auth/logout/:
     post:
       tags:
         - Authentication
@@ -206,7 +206,7 @@ paths:
                 success: false
                 message: "User not logged in."
 
-  /fer_auth/verify-email/{token}/:
+  /fer/v1/account/verification/email/{token}/:
     get:
       tags:
         - Email Verification
@@ -245,7 +245,7 @@ paths:
                 success: false
                 message: "Verification link has expired."
 
-  /fer_auth/resend-verification/:
+  /fer/v1/account/verification/email/resend/:
     post:
       tags:
         - Email Verification
@@ -288,7 +288,7 @@ paths:
                 success: false
                 message: "Email is already verified."
 
-  /fer_auth/profile/:
+  /fer/v1/users/me/:
     get:
       tags:
         - Profile Management
@@ -328,8 +328,6 @@ paths:
               example:
                 success: false
                 message: "Profile not found."
-
-  /fer_auth/profile/update/:
     put:
       tags:
         - Profile Management
@@ -391,7 +389,7 @@ paths:
                 success: false
                 message: "Username already exists."
 
-  /fer_auth/change-password/:
+  /fer/v1/users/me/password/:
     post:
       tags:
         - Password Management
@@ -434,7 +432,7 @@ paths:
                 success: false
                 message: "Old password is incorrect."
 
-  /fer_auth/forgot-password/:
+  /fer/v1/account/password/reset/:
     post:
       tags:
         - Password Management
@@ -477,7 +475,7 @@ paths:
                 success: false
                 message: "Invalid email address."
 
-  /fer_auth/reset-password/{token}/:
+  /fer/v1/account/password/reset/{token}/:
     get:
       tags:
         - Password Management
@@ -563,7 +561,7 @@ paths:
                 success: false
                 message: "Password reset link has expired or already used."
 
-  /fer_auth/2fa/setup/:
+  /fer/v1/users/me/2fa/:
     get:
       tags:
         - Two-Factor Authentication
@@ -604,8 +602,6 @@ paths:
               example:
                 success: false
                 message: "Two-factor authentication is already enabled."
-
-  /fer_auth/2fa/verify/:
     post:
       tags:
         - Two-Factor Authentication
@@ -654,7 +650,7 @@ paths:
                 success: false
                 message: "Invalid verification code. Please try again."
 
-  /fer_auth/2fa/disable/:
+  /fer/v1/users/me/2fa/disable/:
     post:
       tags:
         - Two-Factor Authentication
@@ -701,7 +697,7 @@ paths:
                 success: false
                 message: "Invalid verification code."
 
-  /fer_auth/2fa/backup-codes/:
+  /fer/v1/users/me/2fa/backup-codes/:
     get:
       tags:
         - Two-Factor Authentication
@@ -783,7 +779,7 @@ paths:
                 success: false
                 message: "Invalid verification code."
 
-  /fer_auth/delete-account/:
+  /fer/v1/account/delete/:
     delete:
       tags:
         - Account Management
