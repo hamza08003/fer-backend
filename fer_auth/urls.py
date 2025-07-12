@@ -16,8 +16,10 @@ urlpatterns = [
         # User resources
         path('users/', include([
             path('me/', views.profile, name='profile'),
-            path('me/update/profile/', views.update_profile, name='update_profile'),
-            path('me/update/password/', views.change_password, name='change_password'),
+            path('me/update/', include([
+                path('profile/', views.update_profile, name='update_profile'),
+                path('password/', views.change_password, name='change_password'),
+            ])),
             path('me/2fa/', include([
                 path('setup/', views.setup_2fa, name='setup_2fa'),
                 path('activate/', views.activate_2fa, name='activate_2fa'),
