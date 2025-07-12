@@ -6,6 +6,7 @@ urlpatterns = [
     path('fer/v1/', include([
         # Authentication endpoints
         path('auth/', include([
+            path('status/', views.check_auth_status, name='auth_status'),
             path('register/', views.register, name='register'),
             path('login/', views.login, name='login'),
             path('logout/', views.logout, name='logout'),
