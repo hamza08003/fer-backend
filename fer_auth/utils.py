@@ -13,7 +13,7 @@ def send_verification_email(user):
     """
     # Create verification token
     token = user.profile.create_email_verification_token()
-    verification_url = f"{settings.SITE_DOMAIN}/fer/auth/verify-email/{token}/"
+    verification_url = f"{settings.SITE_DOMAIN}/fer/v1/account/verification/email/{token}/"
     
     # context for email template
     context = {
@@ -44,7 +44,7 @@ def send_password_reset_email(user):
     """
     # Create reset token
     token = user.profile.create_password_reset_token()
-    reset_url = f"{settings.SITE_DOMAIN}/fer/auth/reset-password/{token}/"
+    reset_url = f"{settings.SITE_DOMAIN}/fer/v1/account/password/reset/{token}/"
 
     # context for email template
     context = {
