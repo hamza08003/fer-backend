@@ -394,7 +394,7 @@ paths:
                 success: false
                 message: "Profile not found."
 
-  /fer/v1/users/me/update/profile/:
+  /fer/v1/users/me/update-profile/:
     put:
       tags:
         - Profile Management
@@ -456,7 +456,7 @@ paths:
                 success: false
                 message: "Username already exists."
 
-  /fer/v1/users/me/update/password/:
+  /fer/v1/users/me/update-password/:
     post:
       tags:
         - Password Management
