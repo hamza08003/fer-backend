@@ -15,16 +15,16 @@ urlpatterns = [
         # User resources
         path('users/', include([
             path('status/', views.check_auth_status, name='auth_status'),
-            path('me/', views.profile, name='profile'),
-            path('me/update/', include([
-                path('profile/', views.update_profile, name='update_profile'),
-                path('password/', views.change_password, name='change_password'),
-            ])),
-            path('me/2fa/', include([
-                path('setup/', views.setup_2fa, name='setup_2fa'),
-                path('activate/', views.activate_2fa, name='activate_2fa'),
-                path('disable/', views.disable_2fa, name='disable_2fa'),
-                path('backup-codes/', views.get_backup_codes, name='get_backup_codes'),
+            path('me/', include([
+                path('', views.profile, name='profile'),
+                path('update-profile/', views.update_profile, name='update_profile'),
+                path('change-password/', views.change_password, name='change_password'),
+                path('2fa/', include([
+                    path('setup/', views.setup_2fa, name='setup_2fa'),
+                    path('activate/', views.activate_2fa, name='activate_2fa'),
+                    path('disable/', views.disable_2fa, name='disable_2fa'),
+                    path('backup-codes/', views.get_backup_codes, name='get_backup_codes'),
+                ])),      
             ])),
         ])),
         
