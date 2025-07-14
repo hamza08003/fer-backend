@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+import secrets
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -211,16 +212,18 @@ def login(req):
                         'email_verified': False
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Check if 2FA is enabled
+                # Check if 2FA is enabled, if so then:
+                # create a random temporary token for 2FA verification
                 if user.profile.two_factor_enabled:
-                    # create a temporary token for 2FA verification
-                    temp_token, _ = Token.objects.get_or_create(user=user)
+                    temp_token = secrets.token_hex(32)
+                    user.profile.two_factor_temp_token = temp_token
+                    user.profile.save()
                     
                     return Response({
                         'success': True,
                         'message': 'Please enter your 2FA verification code.',
                         'two_factor_required': True,
-                        'temp_token': temp_token.key,
+                        'temp_token': temp_token,
                         'user': {
                             'username': user.username,
                             'name': user.profile.name,
@@ -755,7 +758,7 @@ def reset_password(req, token):
         if req.method == 'GET':
             return Response({
                 'success': True,
-                'message': 'Token is valid. Please submit your new password.',
+                'message': 'Please submit your new password.',
                 'token': str(token)
             }, status=status.HTTP_200_OK)
         
@@ -910,21 +913,28 @@ def verify_2fa(req):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        # Get the user associated with this temporary token
-        token_obj = Token.objects.get(key=temp_token)
-        user = token_obj.user
+        # get the user associated with this temporary 2fa verification token
+        profile = UserProfile.objects.get(two_factor_temp_token=temp_token)
+        user = profile.user
         
         # Verify the 2FA code
-        if user.profile.verify_2fa_code(code):
-            # Code is valid, update login time and return full access
+        if profile.verify_2fa_code(code):
+            # clear the temporary 2fa verification token
+            profile.two_factor_temp_token = None
+            profile.save()
+
+            # issue a DRF Token
+            token, _ = Token.objects.get_or_create(user=user)
+
+            # update login time and return full access
             user.last_login = timezone.now()
             user.save(update_fields=['last_login'])
             
-            # Return the same token for consistency
+            # return the same token for consistency
             return Response({
                 'success': True,
                 'message': 'Two-factor authentication successful.',
-                'token': token_obj.key,
+                'token': token.key,
                 'user': {
                     'id': user.id,
                     'username': user.username,
@@ -940,7 +950,7 @@ def verify_2fa(req):
                 'message': 'Invalid verification code. Please try again.'
             }, status=status.HTTP_400_BAD_REQUEST)
             
-    except Token.DoesNotExist:
+    except UserProfile.DoesNotExist:
         return Response({
             'success': False,
             'message': 'Invalid temporary token.'
