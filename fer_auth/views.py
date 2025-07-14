@@ -213,10 +213,10 @@ def login(req):
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
                 # Check if 2FA is enabled, if so then:
-                # create a random temporary token for 2FA verification
+                # create a random temporary secret token for 2FA verification
                 if user.profile.two_factor_enabled:
                     temp_token = secrets.token_hex(32)
-                    user.profile.two_factor_temp_token = temp_token
+                    user.profile.two_factor_temp_secret = temp_token
                     user.profile.save()
                     
                     return Response({
@@ -913,8 +913,8 @@ def verify_2fa(req):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        # get the user associated with this temporary 2fa verification token
-        profile = UserProfile.objects.get(two_factor_temp_token=temp_token)
+        # get the user associated with this temporary 2fa verification secret
+        profile = UserProfile.objects.get(two_factor_temp_secret=temp_token)
         user = profile.user
         
         # Verify the 2FA code
